@@ -1,0 +1,30 @@
+---
+
+- name: Add official MariaDB repository
+  hosts: all
+  yum_repository:
+    name: MariaDB
+    description: Official MariaDB repository
+    baseurl: "http://{{ mariadb_mirror }}/{{ mariadb_version }}/{{ ansible_distribution|lower|regex_replace('redhat', 'rhel')|regex_replace('oraclelinux', 'centos') }}{{ ansible_distribution_major_version }}-amd64"
+    gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+    gpgcheck: true
+  tags: mariadb
+
+- name: Install packages
+  hosts: all
+  package:
+    name: "{{ item }}"
+    state: installed
+  with_items: "{{ mariadb_packages }}"
+  tags: mariadb
+
+- include: tasks/configure.yml
+  when: mysql_hardening_enabled
+  tags:
+    - mysql_hardening
+
+- include: tasks/mysql_secure_installation.yml
+  when: mysql_hardening_enabled
+  tags:
+    - mysql_hardening
+    - mysql_secure_installation
